@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --panel: #1a1a1a;
+      --border: #2e2e2e;
+      --display-bg: #111;
+      --accent: #00e5ff;
+      --accent2: #ff4081;
+      --btn-bg: #202020;
+      --btn-hover: #2c2c2c;
+      --btn-active: #383838;
+      --operator-bg: #1a2a2a;
+      --operator-hover: #1f3333;
+      --equals-bg: #003d44;
+      --equals-hover: #005566;
+      --text: #e8e8e8;
+      --text-dim: #888;
+      --mono: 'Share Tech Mono', monospace;
+      --body: 'Barlow', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      font-family: var(--body);
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(0, 229, 255, 0.04) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(255, 64, 129, 0.04) 0%, transparent 60%);
+    }
+
+    .calculator {
+      width: 320px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.03),
+        0 30px 80px rgba(0,0,0,0.8),
+        0 0 40px rgba(0, 229, 255, 0.05);
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Top bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .top-bar .label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+    .top-bar .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Display */
+    .display {
+      background: var(--display-bg);
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 4px;
+      position: relative;
+    }
+    .display .expression {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      text-align: right;
+      min-height: 18px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .display .result {
+      font-family: var(--mono);
+      font-size: 36px;
+      color: var(--text);
+      text-align: right;
+      line-height: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+    .display .result.accent { color: var(--accent); }
+
+    /* History strip */
+    .history-strip {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: #444;
+      text-align: right;
+      padding: 0 20px 8px;
+      background: var(--display-bg);
+      border-bottom: 1px solid var(--border);
+      min-height: 22px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Buttons */
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      padding: 1px;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 16px;
+      padding: 18px 0;
+      background: var(--btn-bg);
+      color: var(--text);
+      transition: background 0.1s, color 0.1s, transform 0.08s;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+    button:hover { background: var(--btn-hover); }
+    button:active { background: var(--btn-active); transform: scale(0.95); }
+
+    button.operator {
+      background: var(--operator-bg);
+      color: var(--accent);
+      font-size: 18px;
+    }
+    button.operator:hover { background: var(--operator-hover); }
+
+    button.equals {
+      background: var(--equals-bg);
+      color: var(--accent);
+      font-size: 20px;
+      box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.05);
+    }
+    button.equals:hover { background: var(--equals-hover); }
+
+    button.clear {
+      color: var(--accent2);
+      font-size: 13px;
+      letter-spacing: 0.05em;
+    }
+    button.clear:hover { background: #2a1a1a; }
+
+    button.zero { grid-column: span 2; text-align: left; padding-left: 26px; }
+
+    button.backspace { color: var(--accent2); font-size: 14px; }
+
+    /* Ripple effect */
+    button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.08) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    button:active::after { opacity: 1; }
+
+    /* Keyboard hint */
+    .footer {
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+    }
+    .footer span {
+      font-size: 9px;
+      color: #3a3a3a;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .kbd {
+      display: inline-flex;
+      gap: 4px;
+    }
+    .key {
+      font-size: 9px;
+      border: 1px solid #2e2e2e;
+      border-radius: 3px;
+      padding: 1px 4px;
+      color: #3a3a3a;
+      font-family: var(--mono);
+    }
+  </style>
+</head>
+<body>
+
+<div class="calculator" id="calc">
+  <div class="top-bar">
+    <span class="label">Calc v1.0</span>
+    <span class="dot"></span>
+  </div>
+  <div class="display">
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </div>
+  <div class="history-strip" id="history">—</div>
+  <div class="buttons">
+    <!-- Row 1 -->
+    <button class="clear" onclick="clearAll()">AC</button>
+    <button class="operator backspace" onclick="backspace()">⌫</button>
+    <button class="operator" onclick="inputPercent()">%</button>
+    <button class="operator" onclick="inputOp('÷')">÷</button>
+    <!-- Row 2 -->
+    <button onclick="inputNum('7')">7</button>
+    <button onclick="inputNum('8')">8</button>
+    <button onclick="inputNum('9')">9</button>
+    <button class="operator" onclick="inputOp('×')">×</button>
+    <!-- Row 3 -->
+    <button onclick="inputNum('4')">4</button>
+    <button onclick="inputNum('5')">5</button>
+    <button onclick="inputNum('6')">6</button>
+    <button class="operator" onclick="inputOp('−')">−</button>
+    <!-- Row 4 -->
+    <button onclick="inputNum('1')">1</button>
+    <button onclick="inputNum('2')">2</button>
+    <button onclick="inputNum('3')">3</button>
+    <button class="operator" onclick="inputOp('+')">+</button>
+    <!-- Row 5 -->
+    <button class="zero" onclick="inputNum('0')">0</button>
+    <button onclick="inputDot()">.</button>
+    <button class="equals" onclick="calculate()">=</button>
+  </div>
+  <div class="footer">
+    <span>keyboard supported</span>
+    <div class="kbd">
+      <span class="key">0-9</span>
+      <span class="key">+-*/</span>
+      <span class="key">Enter</span>
+      <span class="key">Esc</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  let current = '0';
+  let expression = '';
+  let shouldReset = false;
+  let lastResult = null;
+
+  const resultEl   = document.getElementById('result');
+  const exprEl     = document.getElementById('expression');
+  const historyEl  = document.getElementById('history');
+
+  function updateDisplay() {
+    resultEl.textContent = current;
+    exprEl.textContent = expression;
+    resultEl.classList.toggle('accent', shouldReset && lastResult !== null);
+  }
+
+  function inputNum(n) {
+    if (shouldReset) { current = n; shouldReset = false; }
+    else current = current === '0' ? n : current + n;
+    if (current.length > 12) current = current.slice(0, 12);
+    updateDisplay();
+  }
+
+  function inputDot() {
+    if (shouldReset) { current = '0.'; shouldReset = false; }
+    else if (!current.includes('.')) current += '.';
+    updateDisplay();
+  }
+
+  function inputOp(op) {
+    if (expression && !shouldReset) calculate(true);
+    expression = current + ' ' + op;
+    shouldReset = true;
+    lastResult = null;
+    updateDisplay();
+  }
+
+  function inputPercent() {
+    current = String(parseFloat(current) / 100);
+    updateDisplay();
+  }
+
+  function backspace() {
+    if (shouldReset) return;
+    current = current.length > 1 ? current.slice(0, -1) : '0';
+    updateDisplay();
+  }
+
+  function clearAll() {
+    current = '0'; expression = ''; shouldReset = false; lastResult = null;
+    updateDisplay();
+  }
+
+  function calculate(intermediate = false) {
+    if (!expression) return;
+    const parts = expression.trim().split(' ');
+    if (parts.length < 2) return;
+    const a = parseFloat(parts[0]);
+    const op = parts[1];
+    const b = parseFloat(current);
+    let res;
+    if (op === '+') res = a + b;
+    else if (op === '−') res = a - b;
+    else if (op === '×') res = a * b;
+    else if (op === '÷') res = b !== 0 ? a / b : 'Error';
+    else return;
+
+    if (!intermediate) {
+      const fullExpr = expression + ' ' + current + ' =';
+      historyEl.textContent = fullExpr + ' ' + (typeof res === 'number' ? +res.toFixed(10) : res);
+      expression = '';
+    }
+
+    if (typeof res === 'number') {
+      res = +res.toFixed(10);
+      current = String(res);
+      if (current.length > 12) current = res.toExponential(4);
+    } else {
+      current = res;
+    }
+
+    lastResult = res;
+    shouldReset = !intermediate;
+    updateDisplay();
+  }
+
+  // Keyboard support
+  document.addEventListener('keydown', e => {
+    if (e.key >= '0' && e.key <= '9') inputNum(e.key);
+    else if (e.key === '.') inputDot();
+    else if (e.key === '+') inputOp('+');
+    else if (e.key === '-') inputOp('−');
+    else if (e.key === '*') inputOp('×');
+    else if (e.key === '/') { e.preventDefault(); inputOp('÷'); }
+    else if (e.key === '%') inputPercent();
+    else if (e.key === 'Enter' || e.key === '=') calculate();
+    else if (e.key === 'Backspace') backspace();
+    else if (e.key === 'Escape') clearAll();
+  });
+</script>
+</body>
+</html>
